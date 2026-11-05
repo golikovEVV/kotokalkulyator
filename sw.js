@@ -1,6 +1,6 @@
 // Котокалькулятор: работает без интернета после первого открытия.
 // Сначала берём свежую версию из сети, а если сети нет — из кэша.
-const CACHE = 'kitty-calc-32152c7b';
+const CACHE = 'kitty-calc-f9a5c8b3';
 const FILES = ['./', './index.html', './manifest.webmanifest',
                './apple-touch-icon.png', './icon-192.png', './icon-512.png'];
 
