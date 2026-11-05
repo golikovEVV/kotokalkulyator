@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Котокалькулятор">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#ffe4ec">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<title>Котокалькулятор</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "Comic Sans MS", "Chalkboard SE", "Marker Felt", system-ui, sans-serif;
+    background: linear-gradient(135deg, #ffe4ec 0%, #fff3d6 50%, #e3f1ff 100%);
+    overflow-x: hidden;
+    padding: 20px 0;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ---------- фон с котятами ---------- */
+  #kittens { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  .kitten {
+    position: absolute;
+    opacity: .9;
+    animation: float linear infinite;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,.08));
+  }
+  @keyframes float {
+    0%   { transform: translateY(0) rotate(-8deg); }
+    50%  { transform: translateY(-24px) rotate(8deg); }
+    100% { transform: translateY(0) rotate(-8deg); }
+  }
+
+  /* ---------- корпус ---------- */
+  .calc-wrap { position: relative; z-index: 1; padding-top: 70px; }
+
+  .ears { position: absolute; top: 0; left: 0; right: 0; height: 90px; pointer-events: none; }
+
+  .calc {
+    position: relative;
+    width: 360px;
+    background: #fffaf3;
+    border: 5px solid #5b4636;
+    border-radius: 48px 48px 40px 40px;
+    padding: 26px 22px 24px;
+    box-shadow: 0 18px 40px rgba(91,70,54,.25);
+  }
+
+  .face { display: flex; justify-content: center; gap: 70px; margin: -6px 0 6px; }
+  .eye {
+    width: 18px; height: 22px; background: #5b4636; border-radius: 50%;
+    position: relative; animation: blink 4s infinite;
+  }
+  .eye::after {
+    content: ""; position: absolute; width: 6px; height: 6px; background: #fff;
+    border-radius: 50%; top: 4px; left: 4px;
+  }
+  @keyframes blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+  .nose { text-align: center; color: #f48fb1; font-size: 18px; line-height: 1; margin-bottom: 10px; }
+
+  .display {
+    background: #5b4636;
+    color: #fff;
+    border-radius: 22px;
+    padding: 12px 18px;
+    text-align: right;
+    margin-bottom: 18px;
+    min-height: 92px;
+    display: flex; flex-direction: column; justify-content: flex-end;
+  }
+  .history { font-size: 16px; opacity: .65; min-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .value { font-size: 44px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .keys {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px 10px;
+  }
+
+  button {
+    font-family: inherit; cursor: pointer; border: none; background: none;
+    touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+    -webkit-appearance: none; appearance: none; padding: 0;
+  }
+
+  /* ---------- кнопка-лапка ---------- */
+  .paw {
+    position: relative;
+    height: 74px;
+    color: #5b4636;
+    font-size: 26px;
+    font-weight: bold;
+    transition: transform .1s;
+  }
+  .paw .pad {
+    position: absolute;
+    left: 50%; bottom: 2px;
+    width: 52px; height: 42px;
+    transform: translateX(-50%);
+    background: #ffc1d6;
+    border: 3px solid #5b4636;
+    border-radius: 50% 50% 46% 46% / 58% 58% 42% 42%;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: inset 0 -5px 0 rgba(0,0,0,.08);
+  }
+  .paw .toe {
+    position: absolute;
+    width: 17px; height: 21px;
+    background: #ffc1d6;
+    border: 3px solid #5b4636;
+    border-radius: 50%;
+    box-shadow: inset 0 -3px 0 rgba(0,0,0,.08);
+  }
+  .paw .t1 { left: calc(50% - 35px); top: 16px; transform: rotate(-25deg); }
+  .paw .t2 { left: calc(50% - 18px); top: 2px;  transform: rotate(-8deg); }
+  .paw .t3 { left: calc(50% + 1px);  top: 2px;  transform: rotate(8deg); }
+  .paw .t4 { left: calc(50% + 18px); top: 16px; transform: rotate(25deg); }
+
+  @media (hover: hover) { .paw:hover { transform: scale(1.07) rotate(-3deg); } }
+  .paw:active, .paw.pressed { transform: scale(.92); }
+  .paw:active .pad, .paw:active .toe,
+  .paw.pressed .pad, .paw.pressed .toe { background: #ff8fb5; }
+
+  /* лапка «0» пошире */
+  .paw.wide { grid-column: span 2; }
+  .paw.wide .pad { width: 110px; }
+  .paw.wide .t1 { left: calc(50% - 52px); }
+  .paw.wide .t2 { left: calc(50% - 26px); }
+  .paw.wide .t3 { left: calc(50% + 9px); }
+  .paw.wide .t4 { left: calc(50% + 35px); }
+
+  /* ---------- остальные кнопки: клубки ---------- */
+  .yarn {
+    height: 64px;
+    margin-top: 6px;
+    border-radius: 50%;
+    border: 3px solid #5b4636;
+    font-size: 26px; font-weight: bold;
+    color: #fff;
+    background:
+      repeating-linear-gradient(35deg, rgba(255,255,255,.18) 0 4px, transparent 4px 10px),
+      #8fb8ff;
+    box-shadow: inset 0 -6px 0 rgba(0,0,0,.12);
+    transition: transform .1s;
+  }
+  .yarn.op  { background-color: #ffa94d; }
+  .yarn.fn  { background-color: #b9a5e8; }
+  .yarn.eq  { background-color: #f06292; }
+  @media (hover: hover) { .yarn:hover { transform: rotate(20deg) scale(1.05); } }
+  .yarn:active, .yarn.pressed { transform: scale(.9); }
+  .yarn.active-op { outline: 4px dashed #f06292; outline-offset: 2px; }
+
+  .tail {
+    position: absolute; right: -58px; bottom: 30px; width: 80px; height: 140px;
+    pointer-events: none; transform-origin: 10px 130px;
+    animation: wag 2.4s ease-in-out infinite;
+  }
+  @keyframes wag { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(12deg); } }
+
+  .meow {
+    position: absolute; top: 40px; right: -10px;
+    background: #fff; border: 3px solid #5b4636; border-radius: 16px;
+    padding: 4px 10px; font-size: 16px; color: #5b4636;
+    opacity: 0; transform: scale(.6); transition: .2s; pointer-events: none;
+  }
+  .meow.show { opacity: 1; transform: scale(1); }
+
+  @media (max-width: 420px) {
+    .calc { width: 92vw; padding: 22px 14px 20px; }
+    .tail { display: none; }
+  }
+  @media (max-height: 760px) {
+    .calc-wrap { padding-top: 56px; }
+    .ears { height: 72px; }
+    .paw { height: 64px; }
+    .paw .pad { width: 48px; height: 38px; }
+    .yarn { height: 56px; }
+    .display { min-height: 76px; margin-bottom: 12px; }
+    .value { font-size: 38px; }
+  }
+
+  /* ---------- секрет: 150 + 150 ---------- */
+  .display { position: relative; overflow: hidden; }
+  .tractor {
+    position: absolute; bottom: 8px; left: 100%;
+    font-size: 54px; line-height: 1; white-space: nowrap;
+    animation: drive 4.2s linear forwards;
+    pointer-events: none;
+  }
+  .tractor .driver {
+    position: absolute; font-size: 24px; top: -14px; left: 30px;
+    animation: bounce .25s ease-in-out infinite alternate;
+  }
+  .tractor .ride { display: inline-block; animation: bump .18s ease-in-out infinite alternate; }
+  .tractor .dust { font-size: 22px; opacity: .8; margin-left: -4px; vertical-align: bottom; }
+  .tractor .hey {
+    position: absolute; top: -10px; left: -64px; font-size: 13px;
+    background: #fff; color: #5b4636; border-radius: 10px; padding: 2px 7px;
+  }
+  @keyframes drive { from { left: 100%; } to { left: -190px; } }
+  @keyframes bump { from { transform: translateY(0); } to { transform: translateY(-2px); } }
+  @keyframes bounce { from { transform: translateY(0) rotate(-6deg); } to { transform: translateY(-4px) rotate(6deg); } }
+  .display.riding .value, .display.riding .history { visibility: hidden; }
+
+  .nojs {
+    position: fixed; left: 10px; right: 10px; bottom: 10px; z-index: 5;
+    background: #fff; border: 3px solid #5b4636; border-radius: 16px;
+    padding: 10px 14px; color: #5b4636; font-size: 15px; line-height: 1.35; text-align: center;
+    box-shadow: 0 6px 18px rgba(91,70,54,.25);
+  }
+  .nojs a { color: #e0457b; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<!-- Видно только там, где JavaScript выключен (предпросмотр файла в Telegram,
+     почте, «Файлах» на iPhone). Если скрипты работают, плашка сразу удаляется. -->
+<div class="nojs" id="nojs">🐾 Это предпросмотр файла — здесь кнопки не нажимаются.<br>
+  Откройте калькулятор в браузере: <a href="https://claude.ai/artifact/6HgqgPJH5mf99oQGMomn2Z">открыть в Safari</a></div>
+<script>document.getElementById('nojs').remove();</script>
+
+<div id="kittens">
+  <div class="kitten" style="left:6vw;top:8vh;font-size:44px;animation-duration:7s">🐱</div>
+  <div class="kitten" style="left:82vw;top:6vh;font-size:52px;animation-duration:7s">😺</div>
+  <div class="kitten" style="left:14vw;top:30vh;font-size:38px;animation-duration:7s">😻</div>
+  <div class="kitten" style="left:88vw;top:34vh;font-size:46px;animation-duration:5s">🐈</div>
+  <div class="kitten" style="left:4vw;top:62vh;font-size:50px;animation-duration:5s">😸</div>
+  <div class="kitten" style="left:90vw;top:64vh;font-size:34px;animation-duration:7s">🐾</div>
+  <div class="kitten" style="left:10vw;top:88vh;font-size:42px;animation-duration:7s">😽</div>
+  <div class="kitten" style="left:80vw;top:88vh;font-size:48px;animation-duration:5s">🐈‍⬛</div>
+  <div class="kitten" style="left:46vw;top:3vh;font-size:36px;animation-duration:7s">😹</div>
+  <div class="kitten" style="left:48vw;top:94vh;font-size:30px;animation-duration:5s">🐾</div>
+</div>
+
+<div class="calc-wrap">
+  <!-- ушки -->
+  <svg class="ears" viewBox="0 0 360 90" preserveAspectRatio="xMidYMax meet">
+    <path d="M40 90 L70 8 L140 78 Z" fill="#fffaf3" stroke="#5b4636" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M66 74 L76 32 L112 70 Z" fill="#ffc1d6"/>
+    <path d="M320 90 L290 8 L220 78 Z" fill="#fffaf3" stroke="#5b4636" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M294 74 L284 32 L248 70 Z" fill="#ffc1d6"/>
+  </svg>
+
+  <!-- хвостик -->
+  <svg class="tail" viewBox="0 0 80 140">
+    <path d="M12 132 C 60 110, 10 60, 50 20 C 60 10, 74 18, 66 30 C 36 62, 82 104, 22 136 Z"
+          fill="#fffaf3" stroke="#5b4636" stroke-width="5" stroke-linejoin="round"/>
+  </svg>
+
+  <div class="calc">
+    <div class="face"><div class="eye"></div><div class="eye"></div></div>
+    <div class="nose">▼ ω ▼</div>
+    <div class="meow" id="meow">мяу!</div>
+
+    <div class="display">
+      <div class="history" id="history"></div>
+      <div class="value" id="value">0</div>
+    </div>
+
+    <div class="keys" id="keys">
+      <button class="yarn fn" data-action="clear">AC</button>
+      <button class="yarn fn" data-action="sign">±</button>
+      <button class="yarn fn" data-action="percent">%</button>
+      <button class="yarn op" data-op="/">÷</button>
+
+      <button class="paw" data-digit="7" aria-label="7"><span class="toe t1"></span><span class="toe t2"></span><span class="toe t3"></span><span class="toe t4"></span><span class="pad">7</span></button>
+      <button class="paw" data-digit="8" aria-label="8"><span class="toe t1"></span><span class="toe t2"></span><span class="toe t3"></span><span class="toe t4"></span><span class="pad">8</span></button>
+      <button class="paw" data-digit="9" aria-label="9"><span class="toe t1"></span><span class="toe t2"></span><span class="toe t3"></span><span class="toe t4"></span><span class="pad">9</span></button>
+      <button class="yarn op" data-op="*">×</button>
+
+      <button class="paw" data-digit="4" aria-label="4"><span class="toe t1"></span><span class="toe t2"></span><span class="toe t3"></span><span class="toe t4"></span><span class="pad">4</span></button>
+      <button class="paw" data-digit="5" aria-label="5"><span class="toe t1"></span><span class="toe t2"></span><span class="toe t3"></span><span class="toe t4"></span><span class="pad">5</span></button>
+      <button class="paw" data-digit="6" aria-label="6"><span class="toe t1"></span><span class="toe t2"></span><span class="toe t3"></span><span class="toe t4"></span><span class="pad">6</span></button>
+      <button class="yarn op" data-op="-">−</button>
+
+      <button class="paw" data-digit="1" aria-label="1"><span class="toe t1"></span><span class="toe t2"></span><span class="toe t3"></span><span class="toe t4"></span><span class="pad">1</span></button>
+      <button class="paw" data-digit="2" aria-label="2"><span class="toe t1"></span><span class="toe t2"></span><span class="toe t3"></span><span class="toe t4"></span><span class="pad">2</span></button>
+      <button class="paw" data-digit="3" aria-label="3"><span class="toe t1"></span><span class="toe t2"></span><span class="toe t3"></span><span class="toe t4"></span><span class="pad">3</span></button>
+      <button class="yarn op" data-op="+">+</button>
+
+      <button class="paw wide" data-digit="0" aria-label="0"><span class="toe t1"></span><span class="toe t2"></span><span class="toe t3"></span><span class="toe t4"></span><span class="pad">0</span></button>
+      <button class="yarn fn" data-action="dot">,</button>
+      <button class="yarn eq" data-action="equals">=</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ---------- котята на фоне ---------- */
+  const KITTENS = ['🐱', '😺', '😸', '😻', '🐈', '😽', '🐾', '🐈‍⬛', '😹'];
+  const box = document.getElementById('kittens');
+  const count = Math.round(window.innerWidth * window.innerHeight / 22000);
+  for (let i = 0; i < count; i++) {
+    const k = document.createElement('div');
+    k.className = 'kitten';
+    k.textContent = KITTENS[i % KITTENS.length];
+    k.style.left = Math.random() * 100 + 'vw';
+    k.style.top = Math.random() * 100 + 'vh';
+    k.style.fontSize = (28 + Math.random() * 42) + 'px';
+    k.style.animationDuration = (4 + Math.random() * 6) + 's';
+    k.style.animationDelay = (-Math.random() * 8) + 's';
+    box.appendChild(k);
+  }
+
+  /* ---------- логика калькулятора ---------- */
+  const valueEl = document.getElementById('value');
+  const historyEl = document.getElementById('history');
+  const meowEl = document.getElementById('meow');
+
+  let current = '0';      // что набираем
+  let stored = null;      // предыдущее число
+  let op = null;          // ожидающая операция
+  let fresh = false;      // следующая цифра начинает новое число
+
+  const SYMBOL = { '+': '+', '-': '−', '*': '×', '/': '÷' };
+
+  function fmt(n) {
+    if (typeof n === 'string') return n.replace('.', ',');
+    if (!isFinite(n)) return 'мяу?';
+    const r = parseFloat(n.toPrecision(12));
+    return String(r).replace('.', ',');
+  }
+
+  function render() {
+    valueEl.textContent = fmt(current);
+    historyEl.textContent = stored !== null && op ? fmt(stored) + ' ' + SYMBOL[op] : '';
+    document.querySelectorAll('[data-op]').forEach(b =>
+      b.classList.toggle('active-op', fresh && b.dataset.op === op));
+  }
+
+  function compute(a, b, o) {
+    switch (o) {
+      case '+': return a + b;
+      case '-': return a - b;
+      case '*': return a * b;
+      case '/': return b === 0 ? NaN : a / b;
+    }
+    return b;
+  }
+
+  function meow() {
+    meowEl.classList.add('show');
+    clearTimeout(meow.t);
+    meow.t = setTimeout(() => meowEl.classList.remove('show'), 700);
+  }
+
+  function inputDigit(d) {
+    if (current === 'мяу?') current = '0';
+    if (fresh) { current = d; fresh = false; }
+    else if (current.replace('-', '').replace('.', '').length >= 12) return;
+    else current = current === '0' ? d : current === '-0' ? '-' + d : current + d;
+  }
+
+  function inputDot() {
+    if (fresh) { current = '0.'; fresh = false; return; }
+    if (!current.includes('.')) current += '.';
+  }
+
+  function setOp(o) {
+    const n = parseFloat(current);
+    if (op && !fresh && stored !== null) {
+      const r = compute(stored, n, op);
+      stored = r;
+      current = isFinite(r) ? String(parseFloat(r.toPrecision(12))) : 'мяу?';
+    } else {
+      stored = n;
+    }
+    op = o;
+    fresh = true;
+  }
+
+  /* ---------- секрет: 150 + 150 — едет счастливый тракторист ---------- */
+  const displayEl = document.querySelector('.display');
+  function happyTractor() {
+    displayEl.querySelectorAll('.tractor').forEach(t => t.remove());
+    const t = document.createElement('div');
+    t.className = 'tractor';
+    t.innerHTML = '<span class="hey">Ура-а!</span>' +
+      '<span class="ride">🚜<span class="driver">😄</span></span>' +
+      '<span class="dust">💨</span>';
+    displayEl.classList.add('riding');
+    displayEl.appendChild(t);
+    t.addEventListener('animationend', e => {
+      if (e.target !== t) return;
+      t.remove();
+      displayEl.classList.remove('riding');
+      current = '0'; stored = null; op = null; fresh = false;
+      render();
+    });
+  }
+
+  function equals() {
+    if (op === null || stored === null) return;
+    if (op === '+' && stored === 150 && parseFloat(current) === 150) {
+      historyEl.textContent = '';
+      stored = null; op = null; fresh = true; current = '0';
+      happyTractor();
+      return;
+    }
+    const r = compute(stored, parseFloat(current), op);
+    historyEl.textContent = '';
+    current = isFinite(r) ? String(parseFloat(r.toPrecision(12))) : 'мяу?';
+    stored = null; op = null; fresh = true;
+    meow();
+  }
+
+  function clearAll() { current = '0'; stored = null; op = null; fresh = false; }
+
+  function handle(btn) {
+    // нажатие во время поездки — тракторист уезжает, считаем дальше
+    if (displayEl.classList.contains('riding')) {
+      displayEl.querySelectorAll('.tractor').forEach(t => t.remove());
+      displayEl.classList.remove('riding');
+    }
+    if (btn.dataset.digit !== undefined) inputDigit(btn.dataset.digit);
+    else if (btn.dataset.op) setOp(btn.dataset.op);
+    else switch (btn.dataset.action) {
+      case 'clear': clearAll(); break;
+      case 'sign': current = current.startsWith('-') ? current.slice(1) : '-' + current; break;
+      case 'percent': current = String(parseFloat((parseFloat(current) / 100).toPrecision(12))); break;
+      case 'dot': inputDot(); break;
+      case 'equals': equals(); break;
+    }
+    render();
+  }
+
+  document.getElementById('keys').addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if (btn) handle(btn);
+  });
+
+  /* ---------- клавиатура ---------- */
+  document.addEventListener('keydown', e => {
+    let sel = null;
+    if (/^[0-9]$/.test(e.key)) sel = `[data-digit="${e.key}"]`;
+    else if ('+-*/'.includes(e.key)) sel = `[data-op="${e.key}"]`;
+    else if (e.key === '.' || e.key === ',') sel = '[data-action="dot"]';
+    else if (e.key === 'Enter' || e.key === '=') sel = '[data-action="equals"]';
+    else if (e.key === 'Escape' || e.key === 'Delete') sel = '[data-action="clear"]';
+    else if (e.key === '%') sel = '[data-action="percent"]';
+    else if (e.key === 'Backspace') {
+      if (!fresh) current = current.length > 1 && current !== '-0' ? current.slice(0, -1) : '0';
+      if (current === '-') current = '0';
+      render(); return;
+    }
+    if (!sel) return;
+    e.preventDefault();
+    const btn = document.querySelector(sel);
+    btn.classList.add('pressed');
+    setTimeout(() => btn.classList.remove('pressed'), 120);
+    handle(btn);
+  });
+
+  // на iPhone :active срабатывает только при наличии обработчика касаний
+  document.addEventListener('touchstart', function () {}, { passive: true });
+
+  // офлайн-режим — только когда калькулятор открыт как сайт (https)
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    navigator.serviceWorker.register('sw.js').catch(function () {});
+  }
+
+  render();
+</script>
+</body>
+</html>

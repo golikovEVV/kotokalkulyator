@@ -1,0 +1,17 @@
+{
+  "name": "Котокалькулятор",
+  "short_name": "Котокальк",
+  "description": "Калькулятор с котятами и кнопками-лапками",
+  "lang": "ru",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffe4ec",
+  "theme_color": "#ffe4ec",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
