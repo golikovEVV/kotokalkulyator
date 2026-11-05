@@ -46,6 +46,7 @@
     aspect-ratio: 1;
     background-size: cover;
     background-position: center;
+    background-repeat: no-repeat;
     border: 6px solid #fff;
     border-radius: 16px;
     box-shadow: 0 8px 18px rgba(91,70,54,.28);
@@ -61,20 +62,22 @@
   /* ---------- ÷ 0 и ответ 69: мемный кот на весь экран ---------- */
   /* Кот всегда целиком и строго по центру (contain), края — размытая копия.
      Никаких сдвигов в процентах: одинаково на iPhone, Android, Mac и Windows. */
+  /* Два обычных блока, у каждого фото задано напрямую (без inherit и
+     псевдоэлементов — Safari на iOS 26 размножал картинку). */
   .pop-cat {
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh;
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
     z-index: 100; display: none; overflow: hidden;
-    background-color: #000;
-    background-size: 0 0; background-repeat: no-repeat;   /* фото рисуют слои ниже */
+    background: #000;
   }
-  .pop-cat::before, .pop-cat::after {
-    content: ""; position: absolute; inset: 0;
-    background-image: inherit; background-repeat: no-repeat; background-position: 50% 50%;
-  }
-  .pop-cat::before { background-size: cover; filter: blur(24px) brightness(.7); transform: scale(1.2); }
-  .pop-cat::after  { background-size: contain; }
   .pop-cat.show { display: block; }
-  .pop-cat.show::after { animation: pop-in 1.5s ease-out forwards; }
+  .pop-bg, .pop-img {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background-repeat: no-repeat !important;
+    background-position: 50% 50% !important;
+  }
+  .pop-bg  { background-size: cover !important;   filter: blur(24px) brightness(.7); transform: scale(1.2); }
+  .pop-img { background-size: contain !important; }
+  .pop-cat.show .pop-img { animation: pop-in 1.5s ease-out forwards; }
   @keyframes pop-in {
     0%   { transform: scale(.6); opacity: 0; }
     10%  { transform: scale(1.06); opacity: 1; }
@@ -273,7 +276,10 @@
   Откройте калькулятор в браузере: <a href="https://claude.ai/artifact/6HgqgPJH5mf99oQGMomn2Z">открыть в Safari</a></div>
 <script>document.getElementById('nojs').remove();</script>
 
-<div class="pop-cat" id="popcat" aria-hidden="true"></div>
+<div class="pop-cat" id="popcat" aria-hidden="true">
+  <div class="pop-bg" id="popbg"></div>
+  <div class="pop-img" id="popimg"></div>
+</div>
 
 <div id="kittens">
   <div class="sticker m1" style="left:3vw;top:4vh;width:clamp(78px,13vw,150px);--r:-9deg;animation-duration:6s"></div>
@@ -354,10 +360,14 @@
   const POP_CATS = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'];
   let popIndex = 0;
   const popEl = document.getElementById('popcat');
+  const popBg = document.getElementById('popbg');
+  const popImg = document.getElementById('popimg');
   function popCat() {
     const cat = POP_CATS[popIndex];
     popIndex = (popIndex + 1) % POP_CATS.length;
-    popEl.className = 'pop-cat ' + cat;
+    popBg.className = 'pop-bg ' + cat;
+    popImg.className = 'pop-img ' + cat;
+    popEl.className = 'pop-cat';
     void popEl.offsetWidth;             // перезапуск анимации
     popEl.classList.add('show');
     clearTimeout(popCat.t);
