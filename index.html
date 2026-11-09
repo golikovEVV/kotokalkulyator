@@ -6,8 +6,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Котокалькулятор">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#ffe4ec">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#2f2825">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
@@ -22,7 +22,9 @@
     align-items: center;
     justify-content: center;
     font-family: "Comic Sans MS", "Chalkboard SE", "Marker Felt", system-ui, sans-serif;
-    background: linear-gradient(135deg, #ffe4ec 0%, #fff3d6 50%, #e3f1ff 100%);
+    /* серо-шоколадная тема */
+    background: #2f2825;
+    background: radial-gradient(ellipse at 50% 35%, #574740 0%, #3b312c 45%, #262120 100%) fixed;
     overflow-x: hidden;
     padding: 20px 0;
     user-select: none;
@@ -49,11 +51,11 @@
     background-repeat: no-repeat;
     border: 6px solid #fff;
     border-radius: 16px;
-    box-shadow: 0 8px 18px rgba(91,70,54,.28);
+    box-shadow: 0 8px 20px rgba(0,0,0,.45);
     animation: float ease-in-out infinite;
     transform: rotate(var(--r, 0deg));
   }
-  .paw-print { position: absolute; font-size: 26px; opacity: .45; transform: rotate(var(--r, 0deg)); }
+  .paw-print { position: absolute; font-size: 26px; opacity: .3; transform: rotate(var(--r, 0deg)); }
   @keyframes float {
     0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)); }
     50%      { transform: translateY(-16px) rotate(calc(var(--r, 0deg) * -1)); }
@@ -96,11 +98,11 @@
   .calc {
     position: relative;
     width: 360px;
-    background: #fffaf3;
+    background: #eee1d3;
     border: 5px solid #5b4636;
     border-radius: 48px 48px 40px 40px;
     padding: 26px 22px 24px;
-    box-shadow: 0 18px 40px rgba(91,70,54,.25);
+    box-shadow: 0 22px 50px rgba(0,0,0,.5);
   }
 
   .face { display: flex; justify-content: center; gap: 70px; margin: -6px 0 6px; }
@@ -259,6 +261,16 @@
   @keyframes bounce { from { transform: translateY(0) rotate(-6deg); } to { transform: translateY(-4px) rotate(6deg); } }
   .display.riding .value, .display.riding .history { visibility: hidden; }
 
+  /* ---------- кнопка звука ---------- */
+  .mute {
+    position: absolute; top: 14px; left: 18px; z-index: 2;
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 3px solid #5b4636; background: #fff;
+    font-size: 17px; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .mute:active { transform: scale(.9); }
+
   .nojs {
     position: fixed; left: 10px; right: 10px; bottom: 10px; z-index: 5;
     background: #fff; border: 3px solid #5b4636; border-radius: 16px;
@@ -301,19 +313,20 @@
 <div class="calc-wrap">
   <!-- ушки -->
   <svg class="ears" viewBox="0 0 360 90" preserveAspectRatio="xMidYMax meet">
-    <path d="M40 90 L70 8 L140 78 Z" fill="#fffaf3" stroke="#5b4636" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M40 90 L70 8 L140 78 Z" fill="#eee1d3" stroke="#5b4636" stroke-width="5" stroke-linejoin="round"/>
     <path d="M66 74 L76 32 L112 70 Z" fill="#ffc1d6"/>
-    <path d="M320 90 L290 8 L220 78 Z" fill="#fffaf3" stroke="#5b4636" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M320 90 L290 8 L220 78 Z" fill="#eee1d3" stroke="#5b4636" stroke-width="5" stroke-linejoin="round"/>
     <path d="M294 74 L284 32 L248 70 Z" fill="#ffc1d6"/>
   </svg>
 
   <!-- хвостик -->
   <svg class="tail" viewBox="0 0 80 140">
     <path d="M12 132 C 60 110, 10 60, 50 20 C 60 10, 74 18, 66 30 C 36 62, 82 104, 22 136 Z"
-          fill="#fffaf3" stroke="#5b4636" stroke-width="5" stroke-linejoin="round"/>
+          fill="#eee1d3" stroke="#5b4636" stroke-width="5" stroke-linejoin="round"/>
   </svg>
 
   <div class="calc">
+    <button class="mute" id="mute" type="button" aria-label="Выключить звук">🔊</button>
     <div class="face"><div class="eye"></div><div class="eye"></div></div>
     <div class="nose">▼ ω ▼</div>
     <div class="meow" id="meow">мяу!</div>
@@ -370,6 +383,7 @@
     popEl.className = 'pop-cat';
     void popEl.offsetWidth;             // перезапуск анимации
     popEl.classList.add('show');
+    setTimeout(() => Cat.play('popcat'), 120);   // после звука кнопки — драматичное мяу
     clearTimeout(popCat.t);
     popCat.t = setTimeout(() => popEl.classList.remove('show'), 1500);
   }
@@ -482,6 +496,7 @@
   function clearAll() { current = '0'; stored = null; op = null; fresh = false; }
 
   function handle(btn) {
+    Cat.play(soundOf(btn));
     // нажатие во время поездки — тракторист уезжает, считаем дальше
     if (displayEl.classList.contains('riding')) {
       displayEl.querySelectorAll('.tractor').forEach(t => t.remove());
@@ -503,6 +518,156 @@
     const btn = e.target.closest('button');
     if (btn) handle(btn);
   });
+
+  /* ---------- кошачьи звуки (синтез Web Audio, без файлов) ---------- */
+  const Cat = (() => {
+    let ctx = null, master = null, noiseBuf = null, muted = false;
+    try { muted = localStorage.getItem('kittyMute') === '1'; } catch (e) {}
+
+    function ac() {
+      if (!ctx) {
+        const C = window.AudioContext || window.webkitAudioContext;
+        if (!C) return null;
+        ctx = new C();
+        const comp = ctx.createDynamicsCompressor();
+        master = ctx.createGain(); master.gain.value = 0.9;
+        master.connect(comp); comp.connect(ctx.destination);
+      }
+      if (ctx.state === 'suspended') ctx.resume();
+      return ctx;
+    }
+    function noise(c) {
+      if (!noiseBuf) {
+        noiseBuf = c.createBuffer(1, c.sampleRate, c.sampleRate);
+        const d = noiseBuf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      }
+      const s = c.createBufferSource(); s.buffer = noiseBuf; s.loop = true; return s;
+    }
+    function env(c, t, dur, peak, attack) {
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(peak, t + (attack || 0.03));
+      g.gain.setValueAtTime(peak, t + dur * 0.6);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      g.connect(master);
+      return g;
+    }
+
+    // Мяу: тон поднимается и падает, фильтры-«гласные» скользят м-и-а-у.
+    // p = [начало, пик, конец] относительно f0; trill — «мррр» в начале.
+    function meow(c, t, f0, dur, p, trill) {
+      p = p || [0.82, 1.18, 0.7];
+      const o = c.createOscillator(); o.type = 'sawtooth';
+      o.frequency.setValueAtTime(f0 * p[0], t);
+      o.frequency.linearRampToValueAtTime(f0 * p[1], t + dur * 0.35);
+      o.frequency.exponentialRampToValueAtTime(f0 * p[2], t + dur);
+      const vib = c.createOscillator(), vg = c.createGain();
+      vib.frequency.value = 6; vg.gain.value = f0 * 0.025; vib.connect(vg); vg.connect(o.frequency);
+
+      const f1 = c.createBiquadFilter(); f1.type = 'bandpass'; f1.Q.value = 3;
+      f1.frequency.setValueAtTime(650, t);
+      f1.frequency.linearRampToValueAtTime(1500, t + dur * 0.35);
+      f1.frequency.linearRampToValueAtTime(700, t + dur);
+      const f2 = c.createBiquadFilter(); f2.type = 'bandpass'; f2.Q.value = 5;
+      f2.frequency.setValueAtTime(2000, t);
+      f2.frequency.linearRampToValueAtTime(2900, t + dur * 0.35);
+      f2.frequency.linearRampToValueAtTime(1200, t + dur);
+      const body = c.createBiquadFilter(); body.type = 'lowpass'; body.frequency.value = 2600;
+      const bg = c.createGain(); bg.gain.value = 0.18;
+
+      const g = env(c, t, dur, 1.2, 0.04);
+      const voice = c.createGain(); voice.gain.value = 1;
+      o.connect(f1); o.connect(f2); o.connect(body);
+      f1.connect(voice); f2.connect(voice); body.connect(bg); bg.connect(voice);
+      voice.connect(g);
+
+      const stop = t + dur + 0.05;
+      if (trill) {                     // «мррр»: дрожание громкости в начале
+        const tr = c.createOscillator(), tg = c.createGain();
+        tr.type = 'square'; tr.frequency.value = 28; tg.gain.value = 0;
+        tg.gain.setValueAtTime(0.45, t); tg.gain.linearRampToValueAtTime(0, t + dur * 0.45);
+        tr.connect(tg); tg.connect(voice.gain); tr.start(t); tr.stop(stop);
+      }
+      o.start(t); vib.start(t); o.stop(stop); vib.stop(stop);
+    }
+
+    // Мур: шум, пульсирующий 20–30 раз в секунду.
+    function purr(c, t, rate, tone, dur) {
+      const n = noise(c);
+      const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = tone;
+      const am = c.createGain(); am.gain.value = 0.5;
+      const lfo = c.createOscillator(), lg = c.createGain();
+      lfo.type = 'triangle'; lfo.frequency.value = rate; lg.gain.value = 0.5;
+      lfo.connect(lg); lg.connect(am.gain);
+      const hum = c.createOscillator(); hum.type = 'sawtooth'; hum.frequency.value = rate * 4;
+      const hl = c.createBiquadFilter(); hl.type = 'lowpass'; hl.frequency.value = tone * 0.8;
+      const hg = c.createGain(); hg.gain.value = 0.35;
+      const g = env(c, t, dur, 1.6, 0.05);
+      n.connect(lp); lp.connect(am); hum.connect(hl); hl.connect(hg); hg.connect(am); am.connect(g);
+      const stop = t + dur + 0.05;
+      n.start(t); lfo.start(t); hum.start(t); n.stop(stop); lfo.stop(stop); hum.stop(stop);
+    }
+
+    // Фырк: короткое «пфф».
+    function hiss(c, t, dur) {
+      const n = noise(c);
+      const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 2500;
+      const g = env(c, t, dur, 0.35, 0.01);
+      n.connect(hp); hp.connect(g); n.start(t); n.stop(t + dur + 0.05);
+    }
+
+    // У каждой кнопки свой звук.
+    const SOUNDS = {
+      '0': c => meow(c, c.currentTime, 400, 0.50, [0.85, 1.15, 0.65]),
+      '1': c => meow(c, c.currentTime, 470, 0.32, [0.9, 1.2, 0.8]),
+      '2': c => meow(c, c.currentTime, 520, 0.42),
+      '3': c => meow(c, c.currentTime, 580, 0.30, [0.95, 1.25, 0.9]),
+      '4': c => meow(c, c.currentTime, 640, 0.45, [0.8, 1.1, 0.6]),
+      '5': c => meow(c, c.currentTime, 700, 0.28, [0.9, 1.3, 1.0]),
+      '6': c => meow(c, c.currentTime, 780, 0.40, [0.85, 1.2, 0.7]),
+      '7': c => meow(c, c.currentTime, 860, 0.26, [1.0, 1.35, 0.95]),
+      '8': c => meow(c, c.currentTime, 950, 0.36, [0.85, 1.15, 0.7]),
+      '9': c => meow(c, c.currentTime, 1050, 0.24, [0.9, 1.3, 1.05]),
+      '.': c => meow(c, c.currentTime, 1250, 0.14, [0.8, 1.5, 1.4]),          // чирик
+      '+': c => purr(c, c.currentTime, 26, 520, 0.45),                        // мур
+      '-': c => purr(c, c.currentTime, 21, 360, 0.45),                        // мур пониже
+      '*': c => meow(c, c.currentTime, 560, 0.38, [0.85, 1.2, 0.9], true),     // мррр-я
+      '/': c => purr(c, c.currentTime, 32, 750, 0.38),                        // мур повыше
+      'equals': c => { const t = c.currentTime;                               // мрр + довольное мяу
+        meow(c, t, 620, 0.22, [0.9, 1.1, 1.0], true); meow(c, t + 0.2, 760, 0.42, [0.9, 1.25, 0.75]); },
+      'clear': c => hiss(c, c.currentTime, 0.28),                             // пфф
+      'sign': c => meow(c, c.currentTime, 900, 0.22, [1.2, 0.9, 1.4]),        // «мя?»
+      'percent': c => meow(c, c.currentTime, 820, 0.30, [0.9, 1.1, 1.0], true),
+      'popcat': c => meow(c, c.currentTime, 380, 0.95, [0.9, 1.3, 0.55]),     // драматичное мяу
+    };
+
+    function play(name) {
+      if (muted || !SOUNDS[name]) return;
+      try { const c = ac(); if (c) SOUNDS[name](c); } catch (e) {}
+    }
+    function toggle() {
+      muted = !muted;
+      try { localStorage.setItem('kittyMute', muted ? '1' : '0'); } catch (e) {}
+      if (!muted) play('5');
+      return muted;
+    }
+    return { play, toggle, get muted() { return muted; } };
+  })();
+
+  function soundOf(btn) {
+    return btn.dataset.digit !== undefined ? btn.dataset.digit
+         : btn.dataset.op ? btn.dataset.op
+         : btn.dataset.action === 'dot' ? '.' : btn.dataset.action;
+  }
+
+  const muteBtn = document.getElementById('mute');
+  function renderMute() {
+    muteBtn.textContent = Cat.muted ? '🔇' : '🔊';
+    muteBtn.setAttribute('aria-label', Cat.muted ? 'Включить звук' : 'Выключить звук');
+  }
+  muteBtn.addEventListener('click', () => { Cat.toggle(); renderMute(); });
+  renderMute();
 
   /* ---------- клавиатура ---------- */
   document.addEventListener('keydown', e => {
