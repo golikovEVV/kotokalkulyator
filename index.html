@@ -211,10 +211,32 @@
 
   .tail {
     position: absolute; right: -58px; bottom: 30px; width: 80px; height: 140px;
-    pointer-events: none; transform-origin: 10px 130px;
+    pointer-events: none; transform-origin: 10px 130px; overflow: visible;
     animation: wag 2.4s ease-in-out infinite;
   }
   @keyframes wag { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(12deg); } }
+  .tail.squeak { animation: wag-fast .12s ease-in-out 5; }
+  @keyframes wag-fast { 0%,100% { transform: rotate(-14deg); } 50% { transform: rotate(18deg); } }
+
+  /* хвост и уши нажимаются; невидимая обводка .hit — зона касания пошире */
+  .ears { overflow: visible; }
+  .ears .ear, .tail .hit { pointer-events: auto; cursor: pointer; }
+  .ears, .tail { touch-action: none; -webkit-user-select: none; user-select: none; }
+  .hit { fill: transparent; stroke: transparent; stroke-width: 26; stroke-linejoin: round; pointer-events: all; }
+  .ear { transform-box: fill-box; transform-origin: 50% 100%; transition: transform .12s; }
+  .ear-l.twitch { transform: rotate(-9deg) scaleY(.92); }
+  .ear-r.twitch { transform: rotate(9deg) scaleY(.92); }
+
+  /* «пи!» у хвоста и «мрр…» у ушей */
+  .bubble {
+    position: absolute; z-index: 3; pointer-events: none;
+    background: #fff; border: 3px solid #5b4636; border-radius: 14px;
+    padding: 2px 9px; font-size: 15px; color: #5b4636; white-space: nowrap;
+    opacity: 0; transform: scale(.6); transition: .18s;
+  }
+  .bubble.show { opacity: 1; transform: scale(1); }
+  .bubble-tail { right: -46px; bottom: 170px; }
+  .bubble-ears { left: 50%; top: -6px; margin-left: -34px; }
 
   .meow {
     position: absolute; top: 40px; right: -10px;
@@ -225,8 +247,11 @@
   .meow.show { opacity: 1; transform: scale(1); }
 
   @media (max-width: 420px) {
-    .calc { width: 92vw; padding: 22px 14px 20px; }
-    .tail { display: none; }
+    /* на узком экране калькулятор чуть уже, чтобы справа торчал хвост */
+    .calc-wrap { margin-right: 22px; }
+    .calc { width: calc(100vw - 50px); padding: 22px 12px 20px; }
+    .tail { width: 56px; height: 98px; right: -36px; bottom: 26px; transform-origin: 7px 91px; }
+    .bubble-tail { right: -8px; bottom: 128px; }
   }
   @media (max-height: 760px) {
     .calc-wrap { padding-top: 56px; }
@@ -312,15 +337,26 @@
 
 <div class="calc-wrap">
   <!-- ушки -->
+  <!-- ушки: нажать или почесать — кот мурлычет -->
   <svg class="ears" viewBox="0 0 360 90" preserveAspectRatio="xMidYMax meet">
-    <path d="M40 90 L70 8 L140 78 Z" fill="#eee1d3" stroke="#5b4636" stroke-width="5" stroke-linejoin="round"/>
-    <path d="M66 74 L76 32 L112 70 Z" fill="#ffc1d6"/>
-    <path d="M320 90 L290 8 L220 78 Z" fill="#eee1d3" stroke="#5b4636" stroke-width="5" stroke-linejoin="round"/>
-    <path d="M294 74 L284 32 L248 70 Z" fill="#ffc1d6"/>
+    <g class="ear ear-l">
+      <path class="hit" d="M40 90 L70 8 L140 78 Z"/>
+      <path d="M40 90 L70 8 L140 78 Z" fill="#eee1d3" stroke="#5b4636" stroke-width="5" stroke-linejoin="round"/>
+      <path d="M66 74 L76 32 L112 70 Z" fill="#ffc1d6"/>
+    </g>
+    <g class="ear ear-r">
+      <path class="hit" d="M320 90 L290 8 L220 78 Z"/>
+      <path d="M320 90 L290 8 L220 78 Z" fill="#eee1d3" stroke="#5b4636" stroke-width="5" stroke-linejoin="round"/>
+      <path d="M294 74 L284 32 L248 70 Z" fill="#ffc1d6"/>
+    </g>
   </svg>
 
-  <!-- хвостик -->
+  <div class="bubble bubble-ears" id="earBubble">мрр… 💕</div>
+  <div class="bubble bubble-tail" id="tailBubble">пи!</div>
+
+  <!-- хвостик: нажать — кот пищит -->
   <svg class="tail" viewBox="0 0 80 140">
+    <path class="hit" d="M12 132 C 60 110, 10 60, 50 20 C 60 10, 74 18, 66 30 C 36 62, 82 104, 22 136 Z"/>
     <path d="M12 132 C 60 110, 10 60, 50 20 C 60 10, 74 18, 66 30 C 36 62, 82 104, 22 136 Z"
           fill="#eee1d3" stroke="#5b4636" stroke-width="5" stroke-linejoin="round"/>
   </svg>
@@ -565,6 +601,9 @@
       'clear': [['purr2', 1.00, 1]],      // ворчливое «мррр»
       'equals': [['meow9', 1.12, 1, 0], ['meow9', 1.30, 1, 0.26]],   // весёлое «мя-мяу!»
       'popcat': [['meow5', 0.88, 1]],     // драматичное «мяяяу»
+      'squeak': [['mew', 1.65, 1]],       // хвост: возмущённый писк «пи!»
+      'squeak2': [['meow9', 1.75, 0.9]],  // хвост: писк покороче (чередуются)
+      'purrchunk': [['purr', 1.00, 1]],   // уши: кусочек мурчания (склеиваются в долгий мур)
     };
 
     function ac() {
@@ -642,6 +681,67 @@
   }
   muteBtn.addEventListener('click', () => { Cat.toggle(); renderMute(); });
   renderMute();
+
+  /* ---------- хвост: нажать — кот пищит ---------- */
+  const tailEl = document.querySelector('.tail');
+  const tailBubble = document.getElementById('tailBubble');
+  let squeakAlt = false;
+  function flash(el, cls, ms) {
+    el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+    clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove(cls), ms);
+  }
+  tailEl.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    Cat.play((squeakAlt = !squeakAlt) ? 'squeak' : 'squeak2');
+    flash(tailEl, 'squeak', 650);
+    flash(tailBubble, 'show', 700);
+  });
+
+  /* ---------- уши: нажать или почесать — кот мурлычет ---------- */
+  // Пока чешешь (водишь пальцем/мышкой по ушам), кусочки мурчания идут друг за другом.
+  const earBubble = document.getElementById('earBubble');
+  let scratching = false, purrUntil = 0, lastMove = 0;
+  const PURR_STEP = 680;                 // мс: клип 0,75 с с затуханием 0,08 с — следующий встык
+  function purrMore() {
+    const now = performance.now();
+    if (now < purrUntil - 60) return;     // текущий кусочек ещё звучит — не накладываем
+    Cat.play('purrchunk');
+    purrUntil = Math.max(now, purrUntil) + PURR_STEP;
+  }
+  function earTouch(e, ear) {
+    flash(ear, 'twitch', 180);
+    earBubble.classList.add('show');
+    clearTimeout(earBubble._t);
+    earBubble._t = setTimeout(() => earBubble.classList.remove('show'), 1200);
+  }
+  document.querySelectorAll('.ear').forEach(ear => {
+    ear.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      scratching = true; lastMove = performance.now();
+      purrMore();
+      setTimeout(purrMore, PURR_STEP - 40);    // одно нажатие — мур примерно на 1,4 с
+      earTouch(e, ear);
+    });
+    ear.addEventListener('pointerenter', e => { if (scratching) earTouch(e, ear); });
+  });
+  // почёсывание: движение с зажатой кнопкой/пальцем по области ушей
+  document.addEventListener('pointermove', e => {
+    if (!scratching) return;
+    const r = document.querySelector('.ears').getBoundingClientRect();
+    const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top - 10 && e.clientY <= r.bottom;
+    if (!inside) return;
+    const now = performance.now();
+    if (now - lastMove > 60) {
+      lastMove = now; purrMore();
+      earBubble.classList.add('show'); clearTimeout(earBubble._t);
+      earBubble._t = setTimeout(() => earBubble.classList.remove('show'), 1200);
+      document.querySelectorAll('.ear').forEach(ear => {
+        const er = ear.getBoundingClientRect();
+        if (e.clientX >= er.left && e.clientX <= er.right) flash(ear, 'twitch', 160);
+      });
+    }
+  });
+  ['pointerup', 'pointercancel'].forEach(ev => document.addEventListener(ev, () => { scratching = false; }));
 
   /* ---------- клавиатура ---------- */
   document.addEventListener('keydown', e => {
